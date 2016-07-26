@@ -1,0 +1,14 @@
+group 'io.nondev'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'antlr'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    antlr 'org.antlr:antlr4:4.5.3'
+    compile 'com.yuvalshavit:antlr-denter:1.0'
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+}
