@@ -17,8 +17,7 @@ blockbody
     ;
 
 stat
-    :
-    (
+    : (
     SEMI
     | varlist EQUAL explist
     | functioncall
@@ -143,25 +142,25 @@ operatorAnd
 	: AND;
 
 operatorComparison
-	: '<' | '>' | '<=' | '>=' | '~=' | '==';
+	: LT | GT | LE | GE | T__3 | EQUAL_EQUAL;
 
 operatorStrcat
-	: '..';
+	: T__4;
 
 operatorAddSub
-	: '+' | '-';
+	: ADD | SUB;
 
 operatorMulDivMod
-	: '*' | '/' | '%' | '//';
+	: MUL | DIV | MOD | T__5;
 
 operatorBitwise
-	: '&' | '|' | '~' | '<<' | '>>';
+	: BITAND | BITOR | TILDE | T__6 | T__7;
 
 operatorUnary
-    : NOT | '#' | '-' | '~';
+    : NOT | T__8 | SUB | TILDE;
 
 operatorPower
-    : '^';
+    : CARET;
 
 number
     : INT | HEX | FLOAT | HEX_FLOAT
