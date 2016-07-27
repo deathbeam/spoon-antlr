@@ -1,5 +1,6 @@
 # ANTLR generated parser
 gen/
+*.tokens
 
 # Ignore Idea project files
 .idea
