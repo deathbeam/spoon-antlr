@@ -1,6 +1,3 @@
-# ANTLR generated parser
-gen/
-
 # Ignore Idea project files
 .idea
 
@@ -18,7 +15,7 @@ gen/
 hs_err_pid*
 
 .gradle
-/build/
+build/
 
 # Ignore Gradle GUI config
 gradle-app.setting
