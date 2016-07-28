@@ -2,13 +2,18 @@ grammar Spoon;
 
 tokens { INDENT, DEDENT }
 
+@parser::header {
+  package io.nondev.spoon;
+}
+
 @lexer::header {
+  package io.nondev.spoon;
   import com.yuvalshavit.antlr4.DenterHelper;
 }
 
 @lexer::members {
   private final DenterHelper denter = DenterHelper.builder()
-    .nl(NL)
+    .nl(SpoonLexer.NL)
     .indent(SpoonParser.INDENT)
     .dedent(SpoonParser.DEDENT)
     .pullToken(SpoonLexer.super::nextToken);
@@ -20,12 +25,13 @@ tokens { INDENT, DEDENT }
 }
 
 chunk
-    : block EOF
+    : NL? (stat NL?)* (retstat NL?)? EOF
     ;
 
 block
-    : NL INDENT (stat NL)* (retstat NL)? DEDENT
-    | stat* retstat?
+    : stat
+    | retstat
+    | INDENT (stat NL?)* (retstat NL?)? DEDENT
     ;
 
 stat
@@ -35,12 +41,12 @@ stat
     | label
     | 'break'
     | 'goto' NAME
-    | 'do' block 'end'
-    | 'while' exp 'do' block 'end'
+    | 'do' block
+    | 'while' exp 'do' block
     | 'repeat' block 'until' exp
-    | 'if' exp 'then' block ('elseif' exp 'then' block)* ('else' block)? 'end'
-    | 'for' NAME '=' exp ',' exp (',' exp)? 'do' block 'end'
-    | 'for' namelist 'in' explist 'do' block 'end'
+    | 'if' exp 'then' block ('elseif' exp 'then' block)* ('else' block)?
+    | 'for' NAME '=' exp ',' exp (',' exp)? 'do' block
+    | 'for' namelist 'in' explist 'do' block
     | 'function' funcname funcbody
     | 'local' 'function' NAME funcbody
     | 'local' namelist ('=' explist)?
@@ -122,7 +128,7 @@ functiondef
     ;
 
 funcbody
-    : '(' parlist? ')' block 'end'
+    : '(' parlist? ')' block
     ;
 
 parlist
@@ -181,6 +187,10 @@ string
     ;
 
 // LEXER
+
+NL
+    : ('\r'? '\n' ' '*)
+    ;
 
 NAME
     : [a-zA-Z_][a-zA-Z_0-9]*
@@ -271,26 +281,15 @@ HexDigit
     ;
 
 COMMENT
-    : '--[' NESTED_STR ']' -> channel(HIDDEN)
+    : '###' ~[###]* '###' -> channel(HIDDEN)
     ;
-    
+
 LINE_COMMENT
-    : '--'
-    (                                               // --
-    | '[' '='*                                      // --[==
-    | '[' '='* ~('='|'['|'\r'|'\n') ~('\r'|'\n')*   // --[==AA
-    | ~('['|'\r'|'\n') ~('\r'|'\n')*                // --AAA
-    ) ('\r\n'|'\r'|'\n'|EOF)
-    -> channel(HIDDEN)
+    : '#' ~[\r\n]* -> channel(HIDDEN)
     ;
-
-NL
-    : ('\r'? '\n' ' '*)
-    ;
-
 
 WS  
-    : [ \t\u000C]+ -> skip
+    : [ \t]+ -> skip
     ;
 
 SHEBANG
