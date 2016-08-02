@@ -38,30 +38,19 @@ stat
     : ';'
     | varlist '=' explist
     | functioncall
-    | label
     | 'break'
     | 'goto' NAME
     | 'do' block
-    | 'while' exp 'do' block
-    | 'repeat' block 'until' exp
-    | 'if' exp 'then' block ('elseif' exp 'then' block)* ('else' block)?
-    | 'for' NAME '=' exp ',' exp (',' exp)? 'do' block
-    | 'for' namelist 'in' explist 'do' block
-    | 'function' funcname funcbody
-    | 'local' 'function' NAME funcbody
-    | 'local' namelist ('=' explist)?
+    | 'while' exp 'do'? block
+    | 'repeat' block 'until'? exp
+    | 'if' exp 'then'? block ('elseif' exp 'then'? block)* ('else' block)?
+    | 'for' NAME '=' exp ',' exp (',' exp)? 'do'? block
+    | 'for' namelist 'in' explist 'do'? block
+    | 'function' NAME funcbody
     ;
 
 retstat
     : 'return' explist? ';'?
-    ;
-
-label
-    : '::' NAME '::'
-    ;
-
-funcname
-    : NAME ('.' NAME)* (':' NAME)?
     ;
 
 varlist
@@ -289,7 +278,7 @@ LINE_COMMENT
     ;
 
 WS  
-    : [ \t]+ -> skip
+    : [ \t\u000C]+ -> skip
     ;
 
 SHEBANG
