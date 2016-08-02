@@ -1,6 +1,7 @@
 # defines a factorial function
 function fact (n)
   if n == 0
+    print("hello")
     return 1
   else
     return n * fact(n-1)

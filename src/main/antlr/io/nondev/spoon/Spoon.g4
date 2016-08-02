@@ -29,28 +29,42 @@ chunk
     ;
 
 block
-    : stat
+    : 'do'?
+    ( stat
     | retstat
     | INDENT (stat NL?)* (retstat NL?)? DEDENT
+    )
     ;
 
 stat
-    : ';'
-    | varlist '=' explist
+    : varlist '=' explist
     | functioncall
     | 'break'
-    | 'goto' NAME
-    | 'do' block
-    | 'while' exp 'do'? block
-    | 'repeat' block 'until'? exp
-    | 'if' exp 'then'? block ('elseif' exp 'then'? block)* ('else' block)?
-    | 'for' NAME '=' exp ',' exp (',' exp)? 'do'? block
-    | 'for' namelist 'in' explist 'do'? block
-    | 'function' NAME funcbody
+    | 'continue'
+    | whileStat
+    | ifStat
+    | forStat
+    | functionStat
+    ;
+
+ifStat
+    : 'if' exp block ('elseif' exp block)* ('else' block)?
+    ;
+
+forStat
+    : 'for' namelist 'in' explist block
+    ;
+
+functionStat
+    : 'function' NAME funcbody
+    ;
+
+whileStat
+    : 'while' exp block
     ;
 
 retstat
-    : 'return' explist? ';'?
+    : 'return' explist?
     ;
 
 varlist
@@ -65,6 +79,7 @@ explist
     : exp (',' exp)*
     ;
 
+// TODO: If, while and for can also be expressions, and postfix expressions
 exp
     : 'nil' | 'false' | 'true'
     | number
@@ -77,7 +92,6 @@ exp
     | operatorUnary exp
     | exp operatorMulDivMod exp
     | exp operatorAddSub exp
-    | <assoc=right> exp operatorStrcat exp
     | exp operatorComparison exp
     | exp operatorAnd exp
     | exp operatorOr exp
@@ -137,20 +151,17 @@ field
     ;
 
 fieldsep
-    : ',' | ';'
+    : ','
     ;
 
 operatorOr 
-	: 'or';
+	: 'or' | '||';
 
 operatorAnd 
-	: 'and';
+	: 'and' | '&&';
 
 operatorComparison 
-	: '<' | '>' | '<=' | '>=' | '~=' | '==';
-
-operatorStrcat
-	: '..';
+	: '<' | '>' | '<=' | '>=' | '~=' | '!=' | '==';
 
 operatorAddSub
 	: '+' | '-';
@@ -162,7 +173,7 @@ operatorBitwise
 	: '&' | '|' | '~' | '<<' | '>>';
 
 operatorUnary
-    : 'not' | '#' | '-' | '~';
+    : 'not' | '!' | '-' | '~';
 
 operatorPower
     : '^';
@@ -269,8 +280,9 @@ HexDigit
     : [0-9a-fA-F]
     ;
 
+// TODO: Fix block comments
 COMMENT
-    : '###' ~[###]* '###' -> channel(HIDDEN)
+    : '###' ~('#')* '###' -> channel(HIDDEN)
     ;
 
 LINE_COMMENT

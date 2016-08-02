@@ -1,6 +1,8 @@
 package io.nondev.spoon;
 
 import java.io.InputStream;
+
+import io.nondev.spoon.util.PrettyPrinter;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -12,8 +14,8 @@ public class Application {
         SpoonLexer lexer = new SpoonLexer(input);
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         SpoonParser parser = new SpoonParser(tokens);
-        ParseTree tree = parser.chunk(); // parse; start at prog
+        ParseTree tree = parser.chunk();
 
-        System.out.println("\n" + tree.toStringTree(parser)); // print tree as text
+        System.out.println(PrettyPrinter.pp(tree, parser));
     }
 }
