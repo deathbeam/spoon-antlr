@@ -1,13 +1,27 @@
 # defines a factorial function
 function fact (n)
-  if n == 0
+  if n == 0 && d == 3
     print("hello")
-    return 1
   else
     return n * fact(n-1)
 
-print("enter a number:")
+print("enter a number:") if n == 0
 a = io.read("*number")        # read a number
 print(fact(a))
 
 print(() -> a)
+
+hash = {
+    a: b,
+    c: d
+}
+
+map = [
+    a: b,
+    c: d
+]
+
+array = [
+    a,
+    b
+]

@@ -19,6 +19,8 @@ tokens { INDENT, DEDENT }
     private int opened = 0;
     // The most recently produced token.
     private Token lastToken = null;
+    // If last token was operator
+    private boolean operator = false;
 
     @Override
     public void emit(Token t) {
@@ -103,9 +105,11 @@ tokens { INDENT, DEDENT }
         String spaces = getText().replaceAll("[\r\n]+", "");
         int next = _input.LA(1);
 
-        if (opened > 0 || next == '\r' || next == '\n' || next == '#') {
-            // If we're inside a list or on a blank line, ignore all indents,
+        // TODO: Fix operator EOL skipping if last char was not operator (create some static operator map)
+        if (opened > 0 || operator == true || next == '\r' || next == '\n' || next == '#') {
+            // If we're inside a list or on a blank line or last char was operator, ignore all indents,
             // dedents and line breaks.
+            operator = false;
             skip();
         } else {
             emit(commonToken(NEWLINE, newLine));
@@ -130,78 +134,99 @@ tokens { INDENT, DEDENT }
 }
 
 chunk
-    : (NEWLINE | stat)* (NEWLINE | retstat)? EOF
+    : (NEWLINE | statement)* (NEWLINE | retstatement)? EOF
     ;
 
 block
-    : 'do'?
-    ( stat
-    | retstat
-    | NEWLINE INDENT (NEWLINE | stat)* (NEWLINE | retstat)? DEDENT
+    : DO?
+    ( statement
+    | retstatement
+    | NEWLINE INDENT (NEWLINE | statement)* (NEWLINE | retstatement)? DEDENT
     )
     ;
 
-stat
-    : ( varlist '=' explist
+statement
+    : ( varlist EQUAL explist
     | functioncall
-    | 'break'
-    | 'continue'
-    | whileStat
-    | ifStat
-    | forStat
-    | functionStat
-    ) NEWLINE?
+    | BREAK
+    | CONTINUE
+    | loop
+    | condition
+    | iterator
+    | function
+    ) ( IF exp
+    | FOR namelist IN explist
+    | WHILE exp
+    )? NEWLINE?
     ;
 
-ifStat
-    : 'if' exp block ('elseif' exp block)* ('else' block)?
-    ;
-
-forStat
-    : 'for' namelist 'in' explist block
-    ;
-
-functionStat
-    : 'function' NAME params block
-    ;
-
-whileStat
-    : 'while' exp block
-    ;
-
-retstat
-    : ('return' explist? | explist) NEWLINE?
+retstatement
+    : (RETURN explist? | explist) NEWLINE?
     ;
 
 varlist
-    : var (',' var)*
+    : var (COMMA var)*
     ;
 
 namelist
-    : NAME (',' NAME)*
+    : NAME (COMMA NAME)*
     ;
 
 explist
-    : exp (',' exp)*
+    : exp (COMMA exp)*
+    ;
+
+fieldlist
+    : field (COMMA field)*
     ;
 
 // TODO: If, while and for can also be expressions, and postfix expressions
 exp
-    : 'nil' | 'false' | 'true'
-    | number
-    | string
-    | '...'
+    : constant
     | closure
     | prefixexp
-    | tableconstructor
-    | <assoc=right> exp operatorPower exp
-    | operatorUnary exp
-    | exp operatorMulDivMod exp
-    | exp operatorAddSub exp
-    | exp operatorComparison exp
-    | exp operatorAnd exp
-    | exp operatorOr exp
-    | exp operatorBitwise exp
+    | array
+    | map
+    | hash
+    | loop
+    | condition
+    | iterator
+    | <assoc=right> exp POWER exp
+    | ( NOT | BANG | SUB | TILDE ) exp
+    | exp ( MUL | DIV | MOD ) exp
+    | exp ( ADD | SUB ) exp
+    | exp ( LT | GT | LE | GE | BITNOT_EQUAL | NOT_EQUAL | EQUAL_EQUAL ) exp
+    | exp AND exp
+    | exp OR exp
+    | exp ( BITAND | BITOR | TILDE | LSHIFT | RSHIFT ) exp
+    ;
+
+condition
+    : IF exp block (ELSEIF exp block)* (ELSE block)?
+    ;
+
+iterator
+    : FOR namelist IN explist block
+    ;
+
+function
+    : FUNCTION NAME params block
+    ;
+
+loop
+    : WHILE exp block
+    ;
+
+constant
+    : NULL
+    | FALSE
+    | TRUE
+    | number
+    | string
+    ;
+
+field
+    : exp COLON exp
     ;
 
 prefixexp
@@ -225,64 +250,32 @@ varSuffix
     ;
 
 nameAndArgs
-    : (':' NAME)? args
+    : (COLON NAME)? args
     ;
 
 args
-    : OPEN_PAREN explist? CLOSE_PAREN | tableconstructor | string
+    : OPEN_PAREN explist? CLOSE_PAREN
     ;
 
 closure
-    : params '->' block
+    : params ARROW block
     ;
 
 params
-    : OPEN_PAREN parlist? CLOSE_PAREN
+    : OPEN_PAREN namelist? CLOSE_PAREN
     ;
 
-parlist
-    : namelist (',' '...')? | '...'
+array
+    : OPEN_BRACK explist? CLOSE_BRACK
     ;
 
-tableconstructor
+hash
     : OPEN_BRACE fieldlist? CLOSE_BRACE
     ;
 
-fieldlist
-    : field (fieldsep field)* fieldsep?
+map
+    : OPEN_BRACK fieldlist CLOSE_BRACK
     ;
-
-field
-    : OPEN_BRACK exp CLOSE_BRACK '=' exp | NAME '=' exp | exp
-    ;
-
-fieldsep
-    : ','
-    ;
-
-operatorOr 
-	: 'or' | '||';
-
-operatorAnd 
-	: 'and' | '&&';
-
-operatorComparison 
-	: '<' | '>' | '<=' | '>=' | '~=' | '!=' | '==';
-
-operatorAddSub
-	: '+' | '-';
-
-operatorMulDivMod
-	: '*' | '/' | '%' | '//';
-
-operatorBitwise
-	: '&' | '|' | '~' | '<<' | '>>';
-
-operatorUnary
-    : 'not' | '!' | '-' | '~';
-
-operatorPower
-    : '^';
 
 number
     : INT | HEX | FLOAT | HEX_FLOAT
@@ -292,7 +285,47 @@ string
     : NORMALSTRING | CHARSTRING
     ;
 
-// LEXER
+DO : 'do' ;
+BREAK : 'break' ;
+CONTINUE : 'continue' ;
+IF : 'if' ;
+ELSEIF : 'elseif' ;
+ELSE : 'else' ;
+FOR : 'for' ;
+IN : 'in' ;
+FUNCTION : 'function' ;
+WHILE : 'while' ;
+RETURN : 'return' ;
+NULL : 'null' ;
+FALSE : 'false' ;
+TRUE : 'true' ;
+EQUAL : '=' { operator=true; };
+COMMA : ',' { operator=true; };
+DOT : '.' { operator=true; };
+COLON : ':' { operator=true; };
+ARROW : '->' { operator=true; };
+OR : ( 'or' | '||' ) { operator=true; };
+AND : ( 'and' | '&&' ) { operator=true; };
+LT : '<' { operator=true; };
+GT : '>' { operator=true; };
+LE : '<=' { operator=true; };
+GE : '>=' { operator=true; };
+BITNOT_EQUAL : '~=' { operator=true; };
+NOT_EQUAL : '!=' { operator=true; };
+EQUAL_EQUAL : '==' { operator=true; };
+ADD : '+' { operator=true; };
+SUB : '-' { operator=true; };
+MUL : '*' { operator=true; };
+DIV : '/' { operator=true; };
+MOD : '%' { operator=true; };
+BITAND : '&' { operator=true; };
+BITOR : '|' { operator=true; };
+TILDE : '~' { operator=true; };
+LSHIFT : '<<' { operator=true; };
+RSHIFT : '>>' { operator=true; };
+NOT : 'not' { operator=true; };
+BANG : '!' { operator=true; };
+POWER : '^' { operator=true; };
 
 NEWLINE
     : ( { atStartOfInput() }? Spaces
@@ -300,19 +333,42 @@ NEWLINE
     ) { processEndOfLine(); }
     ;
 
-OPEN_PAREN : '('  { opened++; };
-CLOSE_PAREN : ')' { opened--; };
-OPEN_BRACK : '['  { opened++; };
-CLOSE_BRACK : ']' { opened--; };
-OPEN_BRACE : '{'  { opened++; };
-CLOSE_BRACE : '}' { opened--; };
+OPEN_PAREN
+    : '('
+    { opened++; }
+    ;
+
+CLOSE_PAREN
+    : ')'
+    { opened--; }
+    ;
+
+OPEN_BRACK
+    : '['
+    { opened++; }
+    ;
+
+CLOSE_BRACK
+    : ']'
+    { opened--; }
+    ;
+
+OPEN_BRACE
+    : '{'
+    { opened++; }
+    ;
+
+CLOSE_BRACE
+    : '}'
+    { opened--; }
+    ;
 
 NAME
     : [a-zA-Z_][a-zA-Z_0-9]*
     ;
 
 NORMALSTRING
-    : '"' ( EscapeSequence | ~('\\'|'"') )* '"' 
+    : '"' ( EscapeSequence | ~('\\'|'"') )* '"'
     ;
 
 CHARSTRING
@@ -343,6 +399,10 @@ SKIP_
     : ( Spaces | Comment | LineJoining ) -> skip
     ;
 
+fragment
+LineJoining
+    : '\\' Spaces? ( '\r'? '\n' | '\r' )
+    ;
 
 fragment
 ExponentPart
@@ -362,14 +422,14 @@ EscapeSequence
     | HexEscape
     | UtfEscape
     ;
-    
+
 fragment
 DecimalEscape
     : '\\' Digit
     | '\\' Digit Digit
     | '\\' [0-2] Digit Digit
     ;
-    
+
 fragment
 HexEscape
     : '\\' 'x' HexDigit HexDigit
@@ -398,8 +458,4 @@ Spaces
 fragment
 Comment
     : '#' ~[\r\n]*
-    ;
-fragment
-LineJoining
-    : '\\' Spaces? ( '\r'? '\n' | '\r' )
     ;
