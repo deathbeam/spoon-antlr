@@ -1,4 +1,4 @@
-function fact (n)
+@macro function fact (n)
   if n == 0 && d == 3
     print("hello")
     print("world")
@@ -13,12 +13,14 @@ Block comment
 
 print("enter a number:") => if n == 0
 
-a = io.read("*number") # read a number
+a = io.read(\number) # read a number
 
 print(fact(a))
 
 print() => do
-    return -> print("hello")
+    return (a, b) -> do
+        print(a, b)
+    end
 end
 
 hash = {

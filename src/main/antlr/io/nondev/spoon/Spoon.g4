@@ -27,7 +27,12 @@ statement
     | condition
     | iterator
     | function
+    | macro
     ) tailcall?
+    ;
+
+macro
+    : AT exp
     ;
 
 tailcall
@@ -172,7 +177,7 @@ number
     ;
 
 string
-    : NORMALSTRING | CHARSTRING
+    : SYMBOLSTRING | NORMALSTRING | CHARSTRING
     ;
 
 END: 'end' ;
@@ -204,6 +209,7 @@ LSHIFT : '<<' ;
 RSHIFT : '>>' ;
 ARROW : '->' ;
 
+AT: '@' ;
 EQUAL : '=' ;
 COMMA : ',' ;
 DOT : '.' ;
@@ -228,7 +234,11 @@ OPEN_BRACE : '{' ;
 CLOSE_BRACE : '}' ;
 
 NAME
-    : [a-zA-Z_][a-zA-Z_0-9]*
+    : Word
+    ;
+
+SYMBOLSTRING
+    : '\\' Word
     ;
 
 NORMALSTRING
@@ -261,6 +271,11 @@ HEX_FLOAT
 
 SKIP_
     : ( BlockComment | Spaces | Comment ) -> skip
+    ;
+
+fragment
+Word
+    : [a-zA-Z_][a-zA-Z_0-9]*
     ;
 
 fragment
