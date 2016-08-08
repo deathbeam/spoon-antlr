@@ -12,15 +12,20 @@ tokens { INDENT, DEDENT }
 
 @lexer::members {
     // A queue where extra tokens are pushed on (see the NEWLINE lexer rule).
-    private java.util.LinkedList<Token> tokens = new java.util.LinkedList<>();
+    private final java.util.LinkedList<Token> tokens = new java.util.LinkedList<>();
     // The stack that keeps track of the indentation level.
-    private java.util.Stack<Integer> indents = new java.util.Stack<>();
+    private final java.util.Stack<Integer> indents = new java.util.Stack<>();
     // The amount of opened braces, brackets and parenthesis.
     private int opened = 0;
     // The most recently produced token.
     private Token lastToken = null;
-    // If last token was operator
-    private boolean operator = false;
+
+    // list of operators
+    private final java.util.List<Integer> operators = java.util.Arrays.asList(
+        EQUAL, COMMA, DOT, COLON, ARROW, OR, AND, LT, GT, LE, GE,
+        BITNOT_EQUAL, NOT_EQUAL, EQUAL_EQUAL, ADD, SUB, MUL, DIV,
+        MOD, BITAND, BITOR, TILDE, LSHIFT, RSHIFT, NOT, BANG, POWER
+    );
 
     @Override
     public void emit(Token t) {
@@ -100,16 +105,20 @@ tokens { INDENT, DEDENT }
         return super.getCharPositionInLine() == 0 && super.getLine() == 1;
     }
 
+    private int getLastToken() {
+        return lastToken != null
+            ? lastToken.getType()
+            : -1;
+    }
+
     private void processEndOfLine() {
         String newLine = getText().replaceAll("[^\r\n]+", "");
         String spaces = getText().replaceAll("[\r\n]+", "");
         int next = _input.LA(1);
 
-        // TODO: Fix operator EOL skipping if last char was not operator (create some static operator map)
-        if (opened > 0 || operator == true || next == '\r' || next == '\n' || next == '#') {
+        if (opened > 0 || next == '\r' || next == '\n' || next == '#' || operators.contains(getLastToken())) {
             // If we're inside a list or on a blank line or last char was operator, ignore all indents,
             // dedents and line breaks.
-            operator = false;
             skip();
         } else {
             emit(commonToken(NEWLINE, newLine));
@@ -180,7 +189,6 @@ fieldlist
     : field (COMMA field)*
     ;
 
-// TODO: If, while and for can also be expressions, and postfix expressions
 exp
     : constant
     | closure
@@ -299,33 +307,33 @@ RETURN : 'return' ;
 NULL : 'null' ;
 FALSE : 'false' ;
 TRUE : 'true' ;
-EQUAL : '=' { operator=true; };
-COMMA : ',' { operator=true; };
-DOT : '.' { operator=true; };
-COLON : ':' { operator=true; };
-ARROW : '->' { operator=true; };
-OR : ( 'or' | '||' ) { operator=true; };
-AND : ( 'and' | '&&' ) { operator=true; };
-LT : '<' { operator=true; };
-GT : '>' { operator=true; };
-LE : '<=' { operator=true; };
-GE : '>=' { operator=true; };
-BITNOT_EQUAL : '~=' { operator=true; };
-NOT_EQUAL : '!=' { operator=true; };
-EQUAL_EQUAL : '==' { operator=true; };
-ADD : '+' { operator=true; };
-SUB : '-' { operator=true; };
-MUL : '*' { operator=true; };
-DIV : '/' { operator=true; };
-MOD : '%' { operator=true; };
-BITAND : '&' { operator=true; };
-BITOR : '|' { operator=true; };
-TILDE : '~' { operator=true; };
-LSHIFT : '<<' { operator=true; };
-RSHIFT : '>>' { operator=true; };
-NOT : 'not' { operator=true; };
-BANG : '!' { operator=true; };
-POWER : '^' { operator=true; };
+EQUAL : '=' ;
+COMMA : ',' ;
+DOT : '.' ;
+COLON : ':' ;
+ARROW : '->' ;
+OR : ( 'or' | '||' ) ;
+AND : ( 'and' | '&&' ) ;
+LT : '<' ;
+GT : '>' ;
+LE : '<=' ;
+GE : '>=' ;
+BITNOT_EQUAL : '~=' ;
+NOT_EQUAL : '!=' ;
+EQUAL_EQUAL : '==' ;
+ADD : '+' ;
+SUB : '-' ;
+MUL : '*' ;
+DIV : '/' ;
+MOD : '%' ;
+BITAND : '&' ;
+BITOR : '|' ;
+TILDE : '~' ;
+LSHIFT : '<<' ;
+RSHIFT : '>>' ;
+NOT : 'not' ;
+BANG : '!' ;
+POWER : '^' ;
 
 NEWLINE
     : ( { atStartOfInput() }? Spaces
