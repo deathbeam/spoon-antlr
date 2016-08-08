@@ -22,9 +22,14 @@ tokens { INDENT, DEDENT }
 
     // list of operators
     private final java.util.List<Integer> operators = java.util.Arrays.asList(
-        EQUAL, COMMA, DOT, COLON, ARROW, OR, AND, LT, GT, LE, GE,
+        EQUAL, COMMA, DOT, COLON, OR, AND, LT, GT, LE, GE,
         BITNOT_EQUAL, NOT_EQUAL, EQUAL_EQUAL, ADD, SUB, MUL, DIV,
-        MOD, BITAND, BITOR, TILDE, LSHIFT, RSHIFT, NOT, BANG, POWER
+        MOD, BITAND, BITOR, TILDE, LSHIFT, RSHIFT, NOT, BANG, POWER,
+        OPEN_PAREN, OPEN_BRACK, OPEN_BRACE
+    );
+
+    private final java.util.List<Character> nextOperators = java.util.Arrays.asList(
+        ']', '}', ')', ',', '+', '-', '*', '/', '='
     );
 
     @Override
@@ -105,20 +110,21 @@ tokens { INDENT, DEDENT }
         return super.getCharPositionInLine() == 0 && super.getLine() == 1;
     }
 
-    private int getLastToken() {
-        return lastToken != null
-            ? lastToken.getType()
-            : -1;
-    }
-
     private void processEndOfLine() {
         String newLine = getText().replaceAll("[^\r\n]+", "");
         String spaces = getText().replaceAll("[\r\n]+", "");
+        int last = lastToken != null ? lastToken.getType() : -1;
         int next = _input.LA(1);
 
-        if (opened > 0 || next == '\r' || next == '\n' || next == '#' || operators.contains(getLastToken())) {
+        System.out.println(lastToken);
+        System.out.println(String.valueOf((char)next));
+
+        if (opened > 0 || next == '\r' || next == '\n' || next == '#'
+                || operators.contains(last)
+                || nextOperators.contains(next)) {
             // If we're inside a list or on a blank line or last char was operator, ignore all indents,
             // dedents and line breaks.
+            System.out.println(true);
             skip();
         } else {
             emit(commonToken(NEWLINE, newLine));
@@ -343,32 +349,26 @@ NEWLINE
 
 OPEN_PAREN
     : '('
-    { opened++; }
     ;
 
 CLOSE_PAREN
     : ')'
-    { opened--; }
     ;
 
 OPEN_BRACK
     : '['
-    { opened++; }
     ;
 
 CLOSE_BRACK
     : ']'
-    { opened--; }
     ;
 
 OPEN_BRACE
     : '{'
-    { opened++; }
     ;
 
 CLOSE_BRACE
     : '}'
-    { opened--; }
     ;
 
 NAME
