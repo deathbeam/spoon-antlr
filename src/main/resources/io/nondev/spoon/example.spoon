@@ -1,11 +1,36 @@
+function fact (n)
+  if n == 0 && d == 3
+    print("hello")
+    print("world")
+  else
+    return n * fact(n-1)
+  end
+end
+
+###
+Block comment
+###
+
+print("enter a number:") => if n == 0
+
+a = io.read("*number") # read a number
+
+print(fact(a))
+
+print() => do
+    return -> print("hello")
+end
+
 hash = {
     a: b,
     c: d
 }
+
 map = [
     a: b,
     c: d
 ]
+
 array = [
     a,
     b
