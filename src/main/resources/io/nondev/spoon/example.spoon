@@ -13,7 +13,11 @@ Block comment
 
 print("enter a number:") => if n == 0
 
-a = io.read(\number) # read a number
+function getIo()
+    return io
+end
+
+a = getIo!read(\number) # read a number
 
 print(fact(a))
 

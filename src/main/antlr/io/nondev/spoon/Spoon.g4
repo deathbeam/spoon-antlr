@@ -40,8 +40,7 @@ tailcall
     ( IF exp
     | FOR namelist IN explist
     | WHILE exp
-    | closure
-    | doblock
+    | exp
     )
     ;
 
@@ -157,7 +156,7 @@ var
     ;
 
 varSuffix
-    : nameAndArgs* (OPEN_BRACK exp CLOSE_BRACK | '.' NAME)
+    : nameAndArgs* (OPEN_BRACK exp CLOSE_BRACK | (DOT | BANG) NAME)
     ;
 
 nameAndArgs
